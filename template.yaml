@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Deploys a Lambda function that handles CloudWatch log group events
+Parameters:
+  Environment:
+    Type: String
+    Description: Value for the ENV environment variable.
+    AllowedPattern: '[A-Za-z][A-Za-z0-9]+'
+
+Resources:
+  CloudWatchLogsHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Lambda function that handles CloudWatch log group events
+      FunctionName: !Sub 'CloudWatchLogsHandler-${Environment}'
+      Handler: index.handler
+      CodeUri: .
+      Runtime: nodejs10.x
+      AutoPublishAlias: live
+      Environment:
+        Variables:
+          ENV: !Ref Environment
+          LOG_DEBUG: false
+
+  CloudWatchLogsInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt CloudWatchLogsHandlerFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: !Sub 'logs.${AWS::Region}.amazonaws.com'
+
+Outputs:
+  Arn:
+    Description: 'CloudWatchLogsHandler Lambda Function ARN'
+    Value: !GetAtt CloudWatchLogsHandlerFunction.Arn
+  Role:
+    Description: 'Implicit IAM Role created for CloudWatchLogsHandlerFunction'
+    Value: !GetAtt CloudWatchLogsHandlerFunctionRole.Arn
+
